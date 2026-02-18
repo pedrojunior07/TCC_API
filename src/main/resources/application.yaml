@@ -1,3 +1,141 @@
 spring:
   application:
     name: paroquia
+  profiles:
+    active: dev
+  jackson:
+    deserialization:
+      fail-on-unknown-properties: false
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+
+---
+# Profile DEV
+spring:
+  config:
+    activate:
+      on-profile: dev
+  datasource:
+    url: jdbc:postgresql://102.211.186.44:5436/paroquia
+    username: paroquia
+    password: sara
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+        jdbc:
+          lob:
+            non_contextual_creation: true
+  flyway:
+    enabled: false
+
+app:
+  jwt:
+    secret: ${JWT_SECRET:change-this-secret-in-production-must-be-at-least-256-bits-long-for-hs512}
+    access-token-expiration-ms: 900000  # 15 minutos
+    refresh-token-expiration-ms: 604800000  # 7 dias
+  uploads:
+    path: ./uploads
+    max-size-mb: 10
+  cors:
+    allowed-origins: http://localhost:5173,http://localhost:3000
+    allowed-methods: GET,POST,PUT,PATCH,DELETE,OPTIONS
+    allowed-headers: Authorization,Content-Type
+    max-age: 3600
+
+logging:
+  level:
+    com.vaticano.paroquia: DEBUG
+    org.springframework.web: DEBUG
+    org.springframework.security: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+
+---
+# Profile PROD
+spring:
+  config:
+    activate:
+      on-profile: prod
+  datasource:
+    url: ${DATABASE_URL}
+    username: ${DB_USER}
+    password: ${DB_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 5
+      connection-timeout: 20000
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        jdbc:
+          lob:
+            non_contextual_creation: true
+  flyway:
+    enabled: false
+
+app:
+  jwt:
+    secret: ${JWT_SECRET}  # OBRIGATÓRIO em produção via env var
+    access-token-expiration-ms: ${JWT_ACCESS_TOKEN_EXPIRATION_MS:900000}
+    refresh-token-expiration-ms: ${JWT_REFRESH_TOKEN_EXPIRATION_MS:604800000}
+  uploads:
+    path: ${UPLOADS_PATH:/var/uploads}
+    max-size-mb: ${UPLOADS_MAX_SIZE_MB:10}
+  cors:
+    allowed-origins: ${FRONTEND_URL}
+    allowed-methods: GET,POST,PUT,PATCH,DELETE,OPTIONS
+    allowed-headers: Authorization,Content-Type
+    max-age: 3600
+
+logging:
+  level:
+    com.vaticano.paroquia: INFO
+    org.springframework.web: WARN
+    org.springframework.security: WARN
+
+---
+# Profile TEST
+spring:
+  config:
+    activate:
+      on-profile: test
+  datasource:
+    url: jdbc:tc:postgresql:16-alpine:///testdb
+    driver-class-name: org.testcontainers.jdbc.ContainerDatabaseDriver
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+  flyway:
+    enabled: false
+
+app:
+  jwt:
+    secret: test-secret-key-for-testing-must-be-at-least-256-bits-long-for-hs512-algorithm
+    access-token-expiration-ms: 3600000
+    refresh-token-expiration-ms: 7200000
+  uploads:
+    path: ./test-uploads
+    max-size-mb: 5
+  cors:
+    allowed-origins: "*"
+    allowed-methods: "*"
+    allowed-headers: "*"
+    max-age: 3600
+
+logging:
+  level:
+    com.vaticano.paroquia: WARN
